@@ -1,8 +1,10 @@
-import 'dart:convert';
-
+import 'package:clima/screens/location_screen.dart';
 import 'package:clima/services/location.dart';
+import 'package:clima/services/networking.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+
+const String apiKey = 'af7726597bcf5e346cb8405d708d8aa1';
 
 class LoadingScreen extends StatefulWidget {
   @override
@@ -10,49 +12,44 @@ class LoadingScreen extends StatefulWidget {
 }
 
 class _LoadingScreenState extends State<LoadingScreen> {
+  double latitude;
+  double longitude;
+
   @override
   void initState() {
     super.initState();
-    getLocation();
+    getLocationData();
   }
 
-  getLocation() async {
+  getLocationData() async {
     Location location = Location();
+
     await location.getCurrentLocation();
-    print("latitude:" + location.latitude.toString());
-    print("longitude:" + location.longitude.toString());
-  }
 
-  getData() async {
-    http.Response response = await http.get(
-        'https://samples.openweathermap.org/data/2.5/weather?q=London,uk&appid=439d4b804bc8187953eb36d2a8c26a02');
+    this.latitude = location.latitude;
+    this.longitude = location.longitude;
 
-//    print(response.body);
+    NetworkHelper networkHelper = NetworkHelper(
+        url:
+            'https://api.openweathermap.org/data/2.5/weather?lat=$latitude&lon=$longitude&appid=af7726597bcf5e346cb8405d708d8aa1');
 
-    if (response.statusCode == 200) {
-      String data = response.body;
+    var weatherData = await networkHelper.getData();
 
-      var decodedData = jsonDecode(data);
-
-      double temperature = decodedData['main']['temp'];
-      print("temperature:" + temperature.toString());
-
-      int condition = decodedData['weather'][0]['id'];
-      print("condition:" + condition.toString());
-
-      String cityName = decodedData['name'];
-      print("cityName:" + cityName.toString());
-
-      double longitude = decodedData['coord']['lon'];
-      print(longitude);
-      String weatherDescription = decodedData['weather'][0]['description'];
-      print(weatherDescription);
-    }
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return LocationScreen();
+    }));
   }
 
   @override
   Widget build(BuildContext context) {
-    getData();
-    return Scaffold();
+    return Scaffold(
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: SpinKitDoubleBounce(
+          color: Colors.yellow,
+          size: 100.0,
+        ),
+      ),
+    );
   }
 }
